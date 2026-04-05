@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { authMiddleware } from "../../middleware/auth.middleware";
-import { requireRole } from "../../middleware/rbac.middleware";
+import { requireRole, requireAdmin } from "../../middleware/rbac.middleware";
 import { validate } from "../../middleware/validate.middleware";
 import { Role } from "@prisma/client";
 import {
   getAllTransactions,
+  getDeletedTransactions,
   getTransactionById,
   createTransaction,
   updateTransaction,
@@ -25,6 +26,11 @@ router.use(authMiddleware);
 
 // GET routes - accessible to all authenticated users
 router.get("/", validate(transactionQuerySchema, "query"), getAllTransactions);
+
+// GET deleted transactions - ADMIN only
+router.get("/deleted", requireAdmin, getDeletedTransactions);
+
+// GET specific transaction
 router.get("/:id", getTransactionById);
 
 // POST route - requires analyst or admin

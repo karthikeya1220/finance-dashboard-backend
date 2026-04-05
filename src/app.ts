@@ -6,8 +6,10 @@ import morgan from "morgan";
 import { env } from "./config/env";
 import { errorMiddleware } from "./middleware/error.middleware";
 import { ApiResponse } from "./utils/ApiResponse";
+import { generateSwaggerHtml } from "./utils/swagger";
 import authRoutes from "./modules/auth/auth.routes";
 import usersRoutes from "./modules/users/users.routes";
+import categoriesRoutes from "./modules/categories/categories.routes";
 import transactionsRoutes from "./modules/transactions/transactions.routes";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes";
 
@@ -56,9 +58,16 @@ app.get("/api/v1/health", (req, res) => {
   });
 });
 
+// Swagger Documentation
+app.get(`${env.API_PREFIX}/docs`, (req, res) => {
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.send(generateSwaggerHtml());
+});
+
 // API routes
 app.use(`${env.API_PREFIX}/auth`, authRoutes);
 app.use(`${env.API_PREFIX}/users`, usersRoutes);
+app.use(`${env.API_PREFIX}/categories`, categoriesRoutes);
 app.use(`${env.API_PREFIX}/transactions`, transactionsRoutes);
 app.use(`${env.API_PREFIX}/dashboard`, dashboardRoutes);
 

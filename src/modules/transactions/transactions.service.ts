@@ -32,6 +32,12 @@ const TRANSACTION_INCLUDE = {
 };
 
 export class TransactionsService {
+  /**
+   * Build where clause for transaction queries
+   * @param query - Transaction query parameters
+   * @param includeDeleted - Whether to include deleted transactions
+   * @returns Prisma where clause object
+   */
   private buildWhereClause(query: TransactionQuery, includeDeleted: boolean) {
     const where: any = {};
 
@@ -67,11 +73,40 @@ export class TransactionsService {
       }
     }
 
-    if (query.search) {
-      where.notes = {
-        contains: query.search,
-        mode: "insensitive",
-      };
+    // Enhanced search: notes, category name, and amount
+    if (query.search && query.search.trim()) {
+      const searchTerm = query.search.trim();
+      const searchNumber = parseFloat(searchTerm);
+      const isValidNumber = !isNaN(searchNumber);
+
+      // Build OR conditions for multi-field search
+      const orConditions: any[] = [
+        // Search in notes field (contains, case insensitive)
+        {
+          notes: {
+            contains: searchTerm,
+            mode: "insensitive",
+          },
+        },
+        // Search in category name (via relation)
+        {
+          category: {
+            name: {
+              contains: searchTerm,
+              mode: "insensitive",
+            },
+          },
+        },
+      ];
+
+      // If search term is a valid number, also search by exact amount match
+      if (isValidNumber) {
+        orConditions.push({
+          amount: searchNumber,
+        });
+      }
+
+      where.OR = orConditions;
     }
 
     return where;
@@ -185,5 +220,70 @@ export class TransactionsService {
     });
 
     return deleted;
+  }
+
+  /**
+   * Find all soft-deleted transactions (ADMIN only)
+   * @param query - Transaction query parameters
+   * @returns Deleted transactions with pagination metadata
+   */
+  async findDeleted(query: TransactionQuery) {
+    const where: any = {
+      deletedAt: { not: null }, // Get only deleted transactions
+    };
+
+    // Apply optional filters to deleted transactions
+    if (query.type) {
+      where.type = query.type;
+    }
+
+    if (query.categoryId) {
+      where.categoryId = query.categoryId;
+    }
+
+    if (query.startDate || query.endDate) {
+      where.date = {};
+      if (query.startDate) {
+        where.date.gte = new Date(query.startDate);
+      }
+      if (query.endDate) {
+        where.date.lte = new Date(query.endDate);
+      }
+    }
+
+    if (query.minAmount || query.maxAmount) {
+      where.amount = {};
+      if (query.minAmount) {
+        where.amount.gte = parseFloat(query.minAmount);
+      }
+      if (query.maxAmount) {
+        where.amount.lte = parseFloat(query.maxAmount);
+      }
+    }
+
+    if (query.search) {
+      where.notes = {
+        contains: query.search,
+        mode: "insensitive",
+      };
+    }
+
+    const paginationParams = getPaginationParams(query);
+    const { skip, take } = getSkipTake(paginationParams);
+
+    const [transactions, total] = await Promise.all([
+      prisma.transaction.findMany({
+        where,
+        include: TRANSACTION_INCLUDE,
+        skip,
+        take,
+        orderBy: { deletedAt: "desc" },
+      }),
+      prisma.transaction.count({ where }),
+    ]);
+
+    const meta = buildPaginationMeta(total, paginationParams);
+
+    return { transactions, meta };
   }
 }

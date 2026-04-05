@@ -59,6 +59,21 @@ export const updateTransaction = asyncHandler(
   }
 );
 
+export const getDeletedTransactions = asyncHandler(
+  async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
+    const result = await transactionsService.findDeleted(
+      req.query as TransactionQuery
+    );
+    const response = new ApiResponse(
+      200,
+      "Deleted transactions retrieved",
+      result.transactions,
+      result.meta
+    );
+    res.status(response.statusCode).json(response);
+  }
+);
+
 export const deleteTransaction = asyncHandler(
   async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
     await transactionsService.softDelete(

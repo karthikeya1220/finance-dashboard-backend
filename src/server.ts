@@ -7,6 +7,7 @@ import { connectDatabase, disconnectDatabase } from "./config/database";
 import { errorMiddleware } from "./middleware/error.middleware";
 import authRoutes from "./modules/auth/auth.routes";
 import usersRoutes from "./modules/users/users.routes";
+import transactionsRoutes from "./modules/transactions/transactions.routes";
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.get("/health", (req, res) => {
 // API routes
 app.use(`${env.API_PREFIX}/auth`, authRoutes);
 app.use(`${env.API_PREFIX}/users`, usersRoutes);
+app.use(`${env.API_PREFIX}/transactions`, transactionsRoutes);
 
 // Error handling middleware (must be last)
 app.use(errorMiddleware);

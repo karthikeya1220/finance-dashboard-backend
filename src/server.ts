@@ -8,6 +8,7 @@ import { errorMiddleware } from "./middleware/error.middleware";
 import authRoutes from "./modules/auth/auth.routes";
 import usersRoutes from "./modules/users/users.routes";
 import transactionsRoutes from "./modules/transactions/transactions.routes";
+import dashboardRoutes from "./modules/dashboard/dashboard.routes";
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.get("/health", (req, res) => {
 app.use(`${env.API_PREFIX}/auth`, authRoutes);
 app.use(`${env.API_PREFIX}/users`, usersRoutes);
 app.use(`${env.API_PREFIX}/transactions`, transactionsRoutes);
+app.use(`${env.API_PREFIX}/dashboard`, dashboardRoutes);
 
 // Error handling middleware (must be last)
 app.use(errorMiddleware);

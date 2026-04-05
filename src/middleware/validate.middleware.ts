@@ -18,7 +18,18 @@ export function validate(
       return next(new ValidationError("Validation failed", errors));
     }
 
-    req[target] = result.data;
+    // For immutable properties like query, params, we use Object.defineProperty
+    if (target === "query" || target === "params") {
+      Object.defineProperty(req, target, {
+        value: result.data,
+        writable: false,
+        enumerable: true,
+        configurable: true,
+      });
+    } else {
+      req[target] = result.data;
+    }
     next();
   };
 }
+

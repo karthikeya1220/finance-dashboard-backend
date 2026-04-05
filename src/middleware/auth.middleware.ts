@@ -5,6 +5,13 @@ import { prisma } from "../config/database";
 import { env } from "../config/env";
 import { AuthenticationError } from "../utils/ApiError";
 
+/**
+ * Middleware to verify JWT token and attach user to request
+ * @param req - Express request with authorization header
+ * @param _res - Express response
+ * @param next - Express next function
+ * @throws AuthenticationError if token is missing, invalid, or user is inactive
+ */
 export async function authMiddleware(
   req: AuthenticatedRequest,
   _res: Response,

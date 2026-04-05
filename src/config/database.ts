@@ -3,6 +3,9 @@ import { env } from "./env";
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
+/**
+ * Prisma client instance with optional logging
+ */
 export const prisma =
   globalForPrisma.prisma ||
   new PrismaClient({
@@ -16,6 +19,10 @@ if (env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }
 
+/**
+ * Connect to the database
+ * @throws Error if connection fails
+ */
 export async function connectDatabase(): Promise<void> {
   try {
     await prisma.$connect();
@@ -26,6 +33,10 @@ export async function connectDatabase(): Promise<void> {
   }
 }
 
+/**
+ * Disconnect from the database
+ * @throws Error if disconnection fails
+ */
 export async function disconnectDatabase(): Promise<void> {
   try {
     await prisma.$disconnect();

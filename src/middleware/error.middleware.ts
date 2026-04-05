@@ -4,6 +4,21 @@ import { AppError, ConflictError, NotFoundError } from "../utils/ApiError";
 import { env } from "../config/env";
 import { ApiResponse } from "../utils/ApiResponse";
 
+interface ErrorResponse {
+  statusCode: number;
+  success: boolean;
+  message: string;
+  data: { errors?: Array<{ field: string; message: string }> } | null;
+  stack?: string;
+}
+
+/**
+ * Global error middleware to handle all errors
+ * @param err - Error object
+ * @param _req - Express request
+ * @param res - Express response
+ * @param _next - Express next function
+ */
 export function errorMiddleware(
   err: Error,
   _req: Request,
@@ -58,16 +73,15 @@ export function errorMiddleware(
 
   const response = new ApiResponse(statusCode, message, null, null);
 
-  const responseBody: any = {
+  const responseBody: ErrorResponse = {
     statusCode: response.statusCode,
     success: response.success,
     message: response.message,
+    data: null,
   };
 
   if (errors.length > 0) {
     responseBody.data = { errors };
-  } else {
-    responseBody.data = null;
   }
 
   if (env.NODE_ENV === "development" && !(err instanceof AppError)) {

@@ -1,10 +1,16 @@
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from "../config/constants";
 
+/**
+ * Pagination parameters
+ */
 export interface PaginationParams {
   page: number;
   limit: number;
 }
 
+/**
+ * Pagination metadata for responses
+ */
 export interface PaginationMeta {
   page: number;
   limit: number;
@@ -14,6 +20,11 @@ export interface PaginationMeta {
   hasPreviousPage: boolean;
 }
 
+/**
+ * Extract and validate pagination parameters from query
+ * @param query - Query object from request
+ * @returns PaginationParams with validated page and limit
+ */
 export function getPaginationParams(query: any): PaginationParams {
   let page = parseInt(query.page, 10) || 1;
   let limit = parseInt(query.limit, 10) || DEFAULT_PAGE_SIZE;
@@ -25,6 +36,12 @@ export function getPaginationParams(query: any): PaginationParams {
   return { page, limit };
 }
 
+/**
+ * Build pagination metadata from total count and params
+ * @param total - Total number of records
+ * @param params - Pagination parameters
+ * @returns PaginationMeta with page info and navigation flags
+ */
 export function buildPaginationMeta(
   total: number,
   params: PaginationParams
@@ -43,6 +60,11 @@ export function buildPaginationMeta(
   };
 }
 
+/**
+ * Calculate skip and take values for database queries
+ * @param params - Pagination parameters
+ * @returns Object with skip and take values
+ */
 export function getSkipTake(params: PaginationParams): {
   skip: number;
   take: number;

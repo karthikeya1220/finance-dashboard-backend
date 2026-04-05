@@ -9,13 +9,34 @@ import {
 import { LoginInput } from "./auth.schema";
 import { AuthenticatedUser } from "../../types/index";
 
+/**
+ * JWT payload interface
+ */
+interface JWTPayload {
+  sub: string;
+  email: string;
+  role: string;
+}
+
+/**
+ * Login result interface
+ */
 export interface LoginResult {
   accessToken: string;
   refreshToken: string;
   user: AuthenticatedUser;
 }
 
+/**
+ * Authentication service
+ */
 export class AuthService {
+  /**
+   * Authenticate user with email and password
+   * @param data - Login input containing email and password
+   * @returns LoginResult with access token, refresh token, and user info
+   * @throws AuthenticationError if credentials are invalid
+   */
   async login(data: LoginInput): Promise<LoginResult> {
     const user = await prisma.user.findUnique({
       where: { email: data.email },
@@ -30,23 +51,17 @@ export class AuthService {
       throw new AuthenticationError("Invalid credentials");
     }
 
-    const jwtPayload = {
+    const jwtPayload: JWTPayload = {
       sub: user.id,
       email: user.email,
       role: user.role,
     };
 
-    const accessToken = jwt.sign(
-      jwtPayload,
-      env.JWT_SECRET,
-      { expiresIn: env.JWT_EXPIRES_IN } as any
-    );
+    const signOptions = { expiresIn: env.JWT_EXPIRES_IN };
+    const accessToken = jwt.sign(jwtPayload, env.JWT_SECRET, signOptions as any);
 
-    const refreshToken = jwt.sign(
-      jwtPayload,
-      env.JWT_REFRESH_SECRET,
-      { expiresIn: env.JWT_REFRESH_EXPIRES_IN } as any
-    );
+    const refreshSignOptions = { expiresIn: env.JWT_REFRESH_EXPIRES_IN };
+    const refreshToken = jwt.sign(jwtPayload, env.JWT_REFRESH_SECRET, refreshSignOptions as any);
 
     return {
       accessToken,
@@ -60,9 +75,15 @@ export class AuthService {
     };
   }
 
+  /**
+   * Refresh an expired access token using a valid refresh token
+   * @param token - Refresh token
+   * @returns Object with new access token
+   * @throws AuthenticationError if refresh token is invalid or expired
+   */
   async refreshToken(token: string): Promise<{ accessToken: string }> {
     try {
-      const payload = jwt.verify(token, env.JWT_REFRESH_SECRET) as any;
+      const payload = jwt.verify(token, env.JWT_REFRESH_SECRET) as JWTPayload;
 
       const user = await prisma.user.findUnique({
         where: { id: payload.sub },
@@ -72,17 +93,14 @@ export class AuthService {
         throw new AuthenticationError("User not found or inactive");
       }
 
-      const jwtPayload = {
+      const jwtPayload: JWTPayload = {
         sub: user.id,
         email: user.email,
         role: user.role,
       };
 
-      const accessToken = jwt.sign(
-        jwtPayload,
-        env.JWT_SECRET,
-        { expiresIn: env.JWT_EXPIRES_IN } as any
-      );
+      const signOptions = { expiresIn: env.JWT_EXPIRES_IN };
+      const accessToken = jwt.sign(jwtPayload, env.JWT_SECRET, signOptions as any);
 
       return { accessToken };
     } catch (error) {
@@ -96,6 +114,12 @@ export class AuthService {
     }
   }
 
+  /**
+   * Get user profile by ID
+   * @param userId - User ID
+   * @returns User profile data
+   * @throws NotFoundError if user is not found
+   */
   async getProfile(userId: string) {
     const user = await prisma.user.findUniqueOrThrow({
       where: { id: userId },

@@ -1,6 +1,6 @@
 export class ApiResponse<T> {
-  readonly status: "success" | "error";
   readonly statusCode: number;
+  readonly success: boolean;
   readonly message: string;
   readonly data: T | null;
   readonly meta: object | null;
@@ -12,7 +12,7 @@ export class ApiResponse<T> {
     meta: object | null = null
   ) {
     this.statusCode = statusCode;
-    this.status = statusCode < 400 ? "success" : "error";
+    this.success = statusCode < 400;
     this.message = message;
     this.data = data;
     this.meta = meta;

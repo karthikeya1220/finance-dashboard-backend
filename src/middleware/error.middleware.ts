@@ -59,13 +59,15 @@ export function errorMiddleware(
   const response = new ApiResponse(statusCode, message, null, null);
 
   const responseBody: any = {
-    status: response.status,
     statusCode: response.statusCode,
+    success: response.success,
     message: response.message,
   };
 
   if (errors.length > 0) {
-    responseBody.errors = errors;
+    responseBody.data = { errors };
+  } else {
+    responseBody.data = null;
   }
 
   if (env.NODE_ENV === "development" && !(err instanceof AppError)) {

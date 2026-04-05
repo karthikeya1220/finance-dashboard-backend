@@ -10,15 +10,11 @@ export const createTransactionSchema = z.object({
   categoryId: z.string().cuid("Category ID must be a valid CUID"),
   date: z
     .string()
-    .or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"))
     .refine(
       (val) => {
-        try {
-          new Date(val);
-          return true;
-        } catch {
-          return false;
-        }
+        // Try to parse as ISO string or YYYY-MM-DD
+        const date = new Date(val);
+        return !isNaN(date.getTime());
       },
       "Invalid date format"
     ),

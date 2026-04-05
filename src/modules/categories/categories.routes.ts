@@ -12,7 +12,27 @@ import { createCategorySchema } from "./categories.schema";
 const router = Router();
 
 /**
- * Public route - list all categories
+ * @swagger
+ * /categories:
+ *   get:
+ *     summary: List all categories
+ *     description: Retrieve all available categories (public endpoint)
+ *     tags:
+ *       - Categories
+ *     responses:
+ *       200:
+ *         description: Categories retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 statusCode:
+ *                   type: integer
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Category'
  */
 router.get("/", getAllCategories);
 
@@ -23,12 +43,68 @@ router.use(authMiddleware);
 router.use(requireAdmin);
 
 /**
- * Create a new category (ADMIN only)
+ * @swagger
+ * /categories:
+ *   post:
+ *     summary: Create a new category
+ *     description: Create a new expense category (ADMIN only)
+ *     tags:
+ *       - Categories
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Groceries
+ *               description:
+ *                 type: string
+ *                 example: Food and household items
+ *     responses:
+ *       201:
+ *         description: Category created successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Admin access required
  */
 router.post("/", validate(createCategorySchema, "body"), createCategory);
 
 /**
- * Delete a category (ADMIN only)
+ * @swagger
+ * /categories/{id}:
+ *   delete:
+ *     summary: Delete a category
+ *     description: Delete an existing category (ADMIN only). Returns error if category has associated transactions.
+ *     tags:
+ *       - Categories
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Category deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Admin access required
+ *       404:
+ *         description: Category not found
+ *       409:
+ *         description: Cannot delete category with associated transactions
  */
 router.delete("/:id", deleteCategory);
 

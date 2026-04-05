@@ -3,10 +3,11 @@ import helmet from "helmet";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 import morgan from "morgan";
+import swaggerUi from "swagger-ui-express";
 import { env } from "./config/env";
+import swaggerSpec from "./config/swagger";
 import { errorMiddleware } from "./middleware/error.middleware";
 import { ApiResponse } from "./utils/ApiResponse";
-import { generateSwaggerHtml } from "./utils/swagger";
 import authRoutes from "./modules/auth/auth.routes";
 import usersRoutes from "./modules/users/users.routes";
 import categoriesRoutes from "./modules/categories/categories.routes";
@@ -58,11 +59,17 @@ app.get("/api/v1/health", (req, res) => {
   });
 });
 
-// Swagger Documentation
-app.get(`${env.API_PREFIX}/docs`, (req, res) => {
-  res.setHeader("Content-Type", "text/html; charset=utf-8");
-  res.send(generateSwaggerHtml());
-});
+// Swagger Documentation UI
+app.use(
+  `${env.API_PREFIX}/docs`,
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    swaggerOptions: {
+      persistAuthorization: true,
+      displayOperationId: false,
+    },
+  })
+);
 
 // API routes
 app.use(`${env.API_PREFIX}/auth`, authRoutes);

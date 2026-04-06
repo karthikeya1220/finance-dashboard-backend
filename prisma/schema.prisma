@@ -37,6 +37,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   transactions Transaction[]
+  refreshSessions RefreshSession[]
 
   @@index([email])
   @@index([role])
@@ -64,11 +65,28 @@ model Transaction {
   deletedAt DateTime?
 
   category  Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  createdBy User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdBy User     @relation(fields: [createdById], references: [id], onDelete: Restrict)
 
   @@index([type])
   @@index([categoryId])
   @@index([createdById])
   @@index([date])
   @@index([deletedAt])
+}
+
+model RefreshSession {
+  id        String   @id @default(cuid())
+  userId    String
+  hashedToken String
+  expiresAt DateTime
+  deviceInfo String?
+  ipAddress String?
+  isRevoked Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([isRevoked])
 }

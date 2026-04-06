@@ -5,6 +5,8 @@ import {
   login,
   refreshToken,
   getProfile,
+  logout,
+  logoutAllDevices,
 } from "./auth.controller";
 import { loginSchema, refreshTokenSchema } from "./auth.schema";
 
@@ -116,5 +118,41 @@ router.post("/refresh", validate(refreshTokenSchema, "body"), refreshToken);
  *         description: Unauthorized - Invalid or missing token
  */
 router.get("/profile", authMiddleware, getProfile);
+
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Logout from current device
+ *     description: Revoke the current refresh token and logout from current device
+ *     tags:
+ *       - Authentication
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Logged out successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.post("/logout", authMiddleware, logout);
+
+/**
+ * @swagger
+ * /auth/logout-all:
+ *   post:
+ *     summary: Logout from all devices
+ *     description: Revoke all refresh tokens and logout from all devices
+ *     tags:
+ *       - Authentication
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Logged out from all devices
+ *       401:
+ *         description: Unauthorized
+ */
+router.post("/logout-all", authMiddleware, logoutAllDevices);
 
 export default router;

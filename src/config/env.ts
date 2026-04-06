@@ -10,6 +10,10 @@ const envSchema = z.object({
   PORT: z.string().optional().default("3000").transform(Number),
   API_PREFIX: z.string().default("/api/v1"),
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
+  CORS_ORIGIN: z
+    .string()
+    .optional()
+    .describe("Comma-separated list of allowed origins or * for all (required in production)"),
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
   JWT_EXPIRES_IN: z.string().default("15m"),
   JWT_REFRESH_SECRET: z
@@ -27,7 +31,19 @@ const envSchema = z.object({
     .optional()
     .default("100")
     .transform(Number),
-});
+}).refine(
+  (data) => {
+    // Ensure CORS_ORIGIN is set in production
+    if (data.NODE_ENV === "production" && !data.CORS_ORIGIN) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: "CORS_ORIGIN must be set in production environment",
+    path: ["CORS_ORIGIN"],
+  }
+);
 
 const result = envSchema.safeParse(process.env);
 

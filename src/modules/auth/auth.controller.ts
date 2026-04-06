@@ -25,6 +25,22 @@ export const refreshToken = asyncHandler(
   }
 );
 
+export const logout = asyncHandler(
+  async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
+    await authService.logout(req.user!.id);
+    const response = new ApiResponse(200, "Logged out successfully");
+    res.status(response.statusCode).json(response);
+  }
+);
+
+export const logoutAllDevices = asyncHandler(
+  async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
+    await authService.logoutAllDevices(req.user!.id);
+    const response = new ApiResponse(200, "Logged out from all devices");
+    res.status(response.statusCode).json(response);
+  }
+);
+
 export const getProfile = asyncHandler(
   async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
     const profile = await authService.getProfile(req.user!.id);

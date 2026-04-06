@@ -132,8 +132,10 @@ export class UsersService {
 
     await this.findById(id);
 
-    const user = await prisma.user.delete({
+    // Soft deactivate instead of hard delete to preserve audit trail and financial history
+    const user = await prisma.user.update({
       where: { id },
+      data: { status: "INACTIVE" },
       select: USER_SELECT,
     });
 

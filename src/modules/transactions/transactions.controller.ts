@@ -15,7 +15,8 @@ export const getAllTransactions = asyncHandler(
   async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
     const result = await transactionsService.findAll(
       req.query as TransactionQuery,
-      req.user!.role
+      req.user!.role,
+      req.user!.id
     );
     const response = new ApiResponse(
       200,
@@ -29,7 +30,11 @@ export const getAllTransactions = asyncHandler(
 
 export const getTransactionById = asyncHandler(
   async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
-    const transaction = await transactionsService.findById(req.params.id as string);
+    const transaction = await transactionsService.findById(
+      req.params.id as string,
+      req.user!.id,
+      req.user!.role
+    );
     const response = new ApiResponse(200, "Transaction retrieved", transaction);
     res.status(response.statusCode).json(response);
   }

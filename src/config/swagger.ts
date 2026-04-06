@@ -36,10 +36,11 @@ const options = {
         User: {
           type: "object",
           properties: {
-            id: { type: "string", format: "uuid" },
+            id: { type: "string", format: "cuid" },
             email: { type: "string", format: "email" },
             name: { type: "string" },
-            role: { type: "string", enum: ["USER", "MODERATOR", "ADMIN"] },
+            role: { type: "string", enum: ["VIEWER", "ANALYST", "ADMIN"] },
+            status: { type: "string", enum: ["ACTIVE", "INACTIVE"] },
             createdAt: { type: "string", format: "date-time" },
             updatedAt: { type: "string", format: "date-time" },
           },
@@ -47,24 +48,22 @@ const options = {
         Category: {
           type: "object",
           properties: {
-            id: { type: "string", format: "uuid" },
+            id: { type: "string", format: "cuid" },
             name: { type: "string" },
             description: { type: "string" },
-            userId: { type: "string", format: "uuid" },
             createdAt: { type: "string", format: "date-time" },
-            updatedAt: { type: "string", format: "date-time" },
           },
         },
         Transaction: {
           type: "object",
           properties: {
-            id: { type: "string", format: "uuid" },
+            id: { type: "string", format: "cuid" },
             amount: { type: "number", format: "decimal" },
             type: { type: "string", enum: ["INCOME", "EXPENSE"] },
             category: { $ref: "#/components/schemas/Category" },
             notes: { type: "string" },
             date: { type: "string", format: "date-time" },
-            userId: { type: "string", format: "uuid" },
+            createdById: { type: "string", format: "cuid" },
             createdAt: { type: "string", format: "date-time" },
             updatedAt: { type: "string", format: "date-time" },
             deletedAt: { type: "string", format: "date-time", nullable: true },

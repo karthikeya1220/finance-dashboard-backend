@@ -112,9 +112,14 @@ export class TransactionsService {
     return where;
   }
 
-  async findAll(query: TransactionQuery, userRole: Role) {
+  async findAll(query: TransactionQuery, userRole: Role, userId: string) {
     const includeDeleted = query.includeDeleted === "true" && userRole === Role.ADMIN;
     const where = this.buildWhereClause(query, includeDeleted);
+
+    // Scope transactions to current user unless ADMIN
+    if (userRole !== Role.ADMIN) {
+      where.createdById = userId;
+    }
 
     const paginationParams = getPaginationParams(query);
     const { skip, take } = getSkipTake(paginationParams);
@@ -135,7 +140,7 @@ export class TransactionsService {
     return { transactions, meta };
   }
 
-  async findById(id: string) {
+  async findById(id: string, userId?: string, userRole?: Role) {
     const transaction = await prisma.transaction.findFirst({
       where: {
         id,
@@ -146,6 +151,11 @@ export class TransactionsService {
 
     if (!transaction) {
       throw new NotFoundError("Transaction");
+    }
+
+    // Enforce access control: only ADMIN or transaction creator can view
+    if (userId && userRole !== Role.ADMIN && transaction.createdById !== userId) {
+      throw new ForbiddenError("Cannot view another user's transaction");
     }
 
     return transaction;
@@ -173,11 +183,7 @@ export class TransactionsService {
     userId: string,
     userRole: Role
   ) {
-    const transaction = await this.findById(id);
-
-    if (userRole !== Role.ADMIN && transaction.createdById !== userId) {
-      throw new ForbiddenError("Cannot modify another user's transaction");
-    }
+    const transaction = await this.findById(id, userId, userRole);
 
     const updateData: any = {};
 
@@ -207,11 +213,7 @@ export class TransactionsService {
   }
 
   async softDelete(id: string, userId: string, userRole: Role) {
-    const transaction = await this.findById(id);
-
-    if (userRole !== Role.ADMIN && transaction.createdById !== userId) {
-      throw new ForbiddenError("Cannot delete another user's transaction");
-    }
+    const transaction = await this.findById(id, userId, userRole);
 
     const deleted = await prisma.transaction.update({
       where: { id },

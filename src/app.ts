@@ -19,17 +19,31 @@ const app = express();
 // Security middleware
 app.use(helmet());
 
-// CORS configuration
-const corsOptions =
-  env.NODE_ENV === "production"
-    ? {
-        origin: process.env.CORS_ORIGIN || "http://localhost:3000",
-        credentials: true,
-      }
-    : { origin: "*" };
+// CORS configuration - validate CORS_ORIGIN in production
+const getCorsOrigin = (): string | RegExp | (string | RegExp)[] => {
+  if (env.NODE_ENV === "production") {
+    const corsOrigin = process.env.CORS_ORIGIN;
+    if (!corsOrigin) {
+      console.warn(
+        "⚠️  CORS_ORIGIN not set in production. Defaulting to http://localhost:3000. Set CORS_ORIGIN environment variable."
+      );
+      return "http://localhost:3000";
+    }
+    // Support comma-separated origins
+    return corsOrigin.includes(",") ? corsOrigin.split(",").map(o => o.trim()) : corsOrigin;
+  }
+  return "*"; // Allow all in development
+};
+
+const corsOptions = {
+  origin: getCorsOrigin(),
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
 app.use(cors(corsOptions));
 
-// Rate limiting
+// Rate limiting - apply different limits to different routes
 const limiter = rateLimit({
   windowMs: env.RATE_LIMIT_WINDOW_MS,
   max: env.RATE_LIMIT_MAX_REQUESTS,
@@ -37,7 +51,25 @@ const limiter = rateLimit({
     const response = new ApiResponse(429, "Too many requests");
     res.status(response.statusCode).json(response);
   },
+  skip: (req) => {
+    // Skip rate limiting for health checks in development
+    if (env.NODE_ENV === "development" && req.path === `${env.API_PREFIX}/health`) {
+      return true;
+    }
+    return false;
+  },
 });
+
+// Stricter limit for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Max 5 attempts per 15 minutes
+  handler: (req, res) => {
+    const response = new ApiResponse(429, "Too many login attempts. Please try again later.");
+    res.status(response.statusCode).json(response);
+  },
+});
+
 app.use(limiter);
 
 // Body parsing middleware with size limits
@@ -49,8 +81,8 @@ app.use(
   morgan(env.NODE_ENV === "development" ? "dev" : "combined")
 );
 
-// Health check endpoint
-app.get("/api/v1/health", (req, res) => {
+// Health check endpoint - use API_PREFIX consistently
+app.get(`${env.API_PREFIX}/health`, (req, res) => {
   res.status(200).json({
     status: "ok",
     timestamp: new Date().toISOString(),
@@ -71,8 +103,8 @@ app.use(
   })
 );
 
-// API routes
-app.use(`${env.API_PREFIX}/auth`, authRoutes);
+// API routes with appropriate rate limiters
+app.use(`${env.API_PREFIX}/auth`, authLimiter, authRoutes); // Stricter limit for auth
 app.use(`${env.API_PREFIX}/users`, usersRoutes);
 app.use(`${env.API_PREFIX}/categories`, categoriesRoutes);
 app.use(`${env.API_PREFIX}/transactions`, transactionsRoutes);

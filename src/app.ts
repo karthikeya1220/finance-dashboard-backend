@@ -16,8 +16,21 @@ import dashboardRoutes from "./modules/dashboard/dashboard.routes";
 
 const app = express();
 
-// Security middleware
-app.use(helmet());
+// Security middleware with CSP allowing CDN for API docs
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
+        styleSrc: ["'self'", "https://cdn.jsdelivr.net", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        fontSrc: ["'self'", "https://fonts.googleapis.com", "https://fonts.gstatic.com"],
+        connectSrc: ["'self'", "https://cdn.jsdelivr.net"],
+      },
+    },
+  })
+);
 
 // CORS configuration - validate CORS_ORIGIN in production
 const getCorsOrigin = (): string | RegExp | (string | RegExp)[] => {

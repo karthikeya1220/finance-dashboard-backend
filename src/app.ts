@@ -91,6 +91,9 @@ app.get(`${env.API_PREFIX}/health`, (req, res) => {
   });
 });
 
+// Serve Swagger UI assets with proper static middleware
+app.use(`${env.API_PREFIX}/docs`, express.static("node_modules/swagger-ui-dist"));
+
 // Swagger Documentation UI
 app.use(
   `${env.API_PREFIX}/docs`,
@@ -100,6 +103,7 @@ app.use(
       persistAuthorization: true,
       displayOperationId: false,
     },
+    customCss: ".swagger-ui { margin: 0; padding: 0; }",
   })
 );
 

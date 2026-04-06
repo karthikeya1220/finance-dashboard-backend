@@ -4,6 +4,7 @@ import cors from "cors";
 import rateLimit from "express-rate-limit";
 import morgan from "morgan";
 import swaggerUi from "swagger-ui-express";
+import path from "path";
 import { env } from "./config/env";
 import swaggerSpec from "./config/swagger";
 import { errorMiddleware } from "./middleware/error.middleware";
@@ -15,6 +16,9 @@ import transactionsRoutes from "./modules/transactions/transactions.routes";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes";
 
 const app = express();
+
+// Serve Swagger UI static assets from node_modules
+app.use(express.static(path.join(__dirname, "../node_modules/swagger-ui-dist")));
 
 // Security middleware
 app.use(helmet());
@@ -91,8 +95,11 @@ app.get(`${env.API_PREFIX}/health`, (req, res) => {
   });
 });
 
-// Serve Swagger UI assets with proper static middleware
-app.use(`${env.API_PREFIX}/docs`, express.static("node_modules/swagger-ui-dist"));
+// Serve Swagger spec as JSON
+app.get(`${env.API_PREFIX}/swagger.json`, (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  res.send(swaggerSpec);
+});
 
 // Swagger Documentation UI
 app.use(
@@ -103,7 +110,6 @@ app.use(
       persistAuthorization: true,
       displayOperationId: false,
     },
-    customCss: ".swagger-ui { margin: 0; padding: 0; }",
   })
 );
 

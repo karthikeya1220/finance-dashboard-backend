@@ -3,9 +3,9 @@ import helmet from "helmet";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 import morgan from "morgan";
+import swaggerUi from "swagger-ui-express";
 import { env } from "./config/env";
 import swaggerSpec from "./config/swagger";
-import { getSwaggerSpecHtml } from "./utils/apiDocsHtml";
 import { errorMiddleware } from "./middleware/error.middleware";
 import { ApiResponse } from "./utils/ApiResponse";
 import authRoutes from "./modules/auth/auth.routes";
@@ -16,27 +16,12 @@ import dashboardRoutes from "./modules/dashboard/dashboard.routes";
 
 const app = express();
 
-// Security middleware with CSP allowing CDN for API docs
+// Security middleware
 app.use(
   helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'", "https://cdn.jsdelivr.net"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
-        imgSrc: ["'self'", "data:", "https:"],
-        fontSrc: ["'self'", "https://fonts.googleapis.com", "https://fonts.gstatic.com"],
-        connectSrc: ["'self'", "https://cdn.jsdelivr.net"],
-      },
-    },
+    contentSecurityPolicy: true,
   })
 );
-
-// Disable CSP for docs endpoint to allow external resources
-app.use(`${env.API_PREFIX}/docs`, (req, res, next) => {
-  res.removeHeader("Content-Security-Policy");
-  next();
-});
 
 // CORS configuration - validate CORS_ORIGIN in production
 const getCorsOrigin = (): string | RegExp | (string | RegExp)[] => {
@@ -116,17 +101,17 @@ app.get(`${env.API_PREFIX}/swagger.json`, (req, res) => {
   res.send(swaggerSpec);
 });
 
-// API Documentation endpoint - serve as HTML using CDN-hosted Swagger UI
-app.get(`${env.API_PREFIX}/docs`, (req, res) => {
-  const specUrl = `${
-    env.NODE_ENV === "production"
-      ? "https://finance-dashboard-backend-beige.vercel.app"
-      : "http://localhost:3000"
-  }${env.API_PREFIX}/swagger.json`;
-  
-  res.setHeader("Content-Type", "text/html; charset=utf-8");
-  res.send(getSwaggerSpecHtml(specUrl));
-});
+// Swagger Documentation UI
+app.use(
+  `${env.API_PREFIX}/docs`,
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    swaggerOptions: {
+      persistAuthorization: true,
+      displayOperationId: false,
+    },
+  })
+);
 
 // API routes with appropriate rate limiters
 app.use(`${env.API_PREFIX}/auth`, authLimiter, authRoutes); // Stricter limit for auth

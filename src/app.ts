@@ -32,6 +32,12 @@ app.use(
   })
 );
 
+// Disable CSP for docs endpoint to allow external resources
+app.use(`${env.API_PREFIX}/docs`, (req, res, next) => {
+  res.removeHeader("Content-Security-Policy");
+  next();
+});
+
 // CORS configuration - validate CORS_ORIGIN in production
 const getCorsOrigin = (): string | RegExp | (string | RegExp)[] => {
   if (env.NODE_ENV === "production") {

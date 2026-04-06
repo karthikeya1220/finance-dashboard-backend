@@ -3,10 +3,9 @@ import helmet from "helmet";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 import morgan from "morgan";
-import swaggerUi from "swagger-ui-express";
-import path from "path";
 import { env } from "./config/env";
 import swaggerSpec from "./config/swagger";
+import { getSwaggerSpecHtml } from "./utils/apiDocsHtml";
 import { errorMiddleware } from "./middleware/error.middleware";
 import { ApiResponse } from "./utils/ApiResponse";
 import authRoutes from "./modules/auth/auth.routes";
@@ -16,9 +15,6 @@ import transactionsRoutes from "./modules/transactions/transactions.routes";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes";
 
 const app = express();
-
-// Serve Swagger UI static assets from node_modules
-app.use(express.static(path.join(__dirname, "../node_modules/swagger-ui-dist")));
 
 // Security middleware
 app.use(helmet());
@@ -101,17 +97,17 @@ app.get(`${env.API_PREFIX}/swagger.json`, (req, res) => {
   res.send(swaggerSpec);
 });
 
-// Swagger Documentation UI
-app.use(
-  `${env.API_PREFIX}/docs`,
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerSpec, {
-    swaggerOptions: {
-      persistAuthorization: true,
-      displayOperationId: false,
-    },
-  })
-);
+// API Documentation endpoint - serve as HTML using CDN-hosted Swagger UI
+app.get(`${env.API_PREFIX}/docs`, (req, res) => {
+  const specUrl = `${
+    env.NODE_ENV === "production"
+      ? "https://finance-dashboard-backend-beige.vercel.app"
+      : "http://localhost:3000"
+  }${env.API_PREFIX}/swagger.json`;
+  
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.send(getSwaggerSpecHtml(specUrl));
+});
 
 // API routes with appropriate rate limiters
 app.use(`${env.API_PREFIX}/auth`, authLimiter, authRoutes); // Stricter limit for auth
